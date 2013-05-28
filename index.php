@@ -31,34 +31,22 @@ function __autoload( $class_name ) {
 // require our registry
 require_once('registry/registry.class.php');
 $registry = Registry::singleton();
+$template = $registry->getObject('template');
 
-// store those core objects
-$registry->storeCoreObjects();
-
-// create a database connection
-$registry->getObject('db')->newConnection('localhost', 'root', 'qpwo1q2w3eEWQ', 'framework');
-
-// set the default skin setting (we will store these in the database later...)
-$registry->storeSetting( array(
-    'skin' => 'default',
-    )
-);
 
 // populate our page object from a template file
-$registry->getObject('template')->buildFromTemplates('main.tpl.php');
+$template->buildFromTemplates( array( 'main.tpl.php' ) );
 
 // cache a query of our members table
-$cache = $registry->getObject('db')->cacheQuery('SELECT * FROM members');
+$cache = $registry->getObject('db')->cacheQuery('SELECT * FROM sb_members');
 
 // assign this to the members tag
-$registry->getObject('template')->getPage()->addTag('members', array('SQL', $cache) );
-
-// set the page title
-$registry->getObject('template')->getPage()->setTitle('Our members');
+$template->getPage()->addTag('members', array('SQL', $cache) );
+$template->getPage()->setTitle('Our members');
 
 // parse it all, and spit it out
-$registry->getObject('template')->parseOutput();
-print $registry->getObject('template')->getPage()->getContent();
+$template->parseOutput();
+print $template->getPage()->getContent();
 
 exit();
 

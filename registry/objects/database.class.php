@@ -58,7 +58,7 @@ class Database {
         }
 
         $this->setActiveConnection( $connectionId );
-        return $connectionId;
+        return $this;
     }
 
     /**
@@ -215,7 +215,13 @@ class Database {
      * @return array 
      */
     public function getRows() {
-        return $this->last->fetch_array(MYSQLI_ASSOC);
+        $result = array();
+
+        while ( $row = $this->last->fetch_assoc() ) {
+            array_push( $result, $row );
+        }
+
+        return $result;
     }
 
     /**

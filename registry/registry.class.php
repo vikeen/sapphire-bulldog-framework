@@ -16,12 +16,35 @@ class Registry {
     private function __construct() {
     }
 
-    public function storeCoreObjects() {
-        $this->storeObject( array(
+    private function storeCoreObjects() {
+        self::$instance->storeObject( array(
             'db' => 'database',
             'template' => 'template'
             )
         );
+    }
+
+    private function storeCoreSettings() {
+        $dbh = self::$instance->getObject('db')->newConnection('localhost', 'root', 'qpwo1q2w3eEWQ', 'sb_framework');
+
+        $sql = 'SELECT param_key,
+                       param_value
+                FROM sb_config'
+        ;
+
+        $dbh->executeQuery( $sql );
+        $rows = $dbh->getRows();
+
+        $settings = array();
+        foreach( $rows as $row ) {
+            $settings[ $row['param_key'] ] = $row['param_value'];
+        }
+
+        // fill in our config gaps
+        $settings['skin_dir'] = 'skins/' . $settings['skin'];
+
+        // store all our database here
+        self::$instance->storeSetting( $settings );
     }
 
     /**
@@ -34,6 +57,10 @@ class Registry {
             $obj = __CLASS__;
             self::$instance = new $obj;
         }
+
+        self::$instance->storeCoreObjects();
+        self::$instance->storeCoreSettings();
+
         return self::$instance;
     }
 
@@ -72,7 +99,7 @@ class Registry {
      * @param Array: $dataList - an array of data to store in the registry
      * @return void
      */
-    public function storeSetting( $dataList) {
+    public function storeSetting( $dataList ) {
         foreach ( $dataList as $key => $data ) {
             self::$settings[ $key ] = $data;
         }

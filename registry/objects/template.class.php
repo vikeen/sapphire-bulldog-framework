@@ -1,7 +1,7 @@
 <?php
 
 // prevent this file being called directly
-if ( ! defined( 'FW' ) ) {
+if ( !defined( 'FW' ) ) {
     echo 'This file can only be called via the main index.php file, and not directly';
     exit();
 }
@@ -21,14 +21,12 @@ class Template {
     /**
      * Add a template bit onto our page
      * @param String $tag the tag where we insert the template e.g. {hello}
-     * @param String $bit the template bit (path to file, or just the filename)
+     * @param String $bit the template bit filename
      * @return void
      */
     public function addTemplateBit( $tag, $bit ) {
-        if( strpos( $bit, 'skins/' ) === false ) {
-            $bit = 'skins/' . Registry::getSetting('skin') . '/templates/' . $bit;
-        }
-        $this->page->addTemplateBit( $tag, $bit );
+        $bitFilePath = 'skins/' . Registry::getSetting('skin') . '/templates/' . $bit;
+        $this->page->addTemplateBit( $tag, $bitFilePath );
     }
 
     /**
@@ -50,6 +48,9 @@ class Template {
      * @return void
      */
     private function replaceTags() {
+        // create core tags first
+        $this->page->setCoreTags();
+
         $tags = $this->page->getTags();
         foreach( $tags as $tag => $data ) {
             if( is_array( $data ) ) {
@@ -127,23 +128,31 @@ class Template {
     }
 
     /**
-     * Set the content of the page based on a number of templates
-     * pass template file locations as individual arguments
+     * Set the content of the page based on the templates provided
+     * @param Array: $bits - Array of templates to combine together. These create the page's content
      * @return void
      */
-    public function buildFromTemplates() {
-        $bits = func_get_args();
+    public function buildFromTemplates( $bits ) {
         $content = "";
+        $bitPath = 'skins/' . Registry::getSetting('skin') . '/templates/';
 
-        foreach( $bits as $bit ) {
-            if( strpos( $bit, 'skins/' ) === false ) {
-                $bit = 'skins/' . Registry::getSetting('skin') . '/templates/' . $bit;
-            }
-            if( file_exists( $bit ) == true ) {
-                $content .= file_get_contents( $bit );
-            }
-
+        // Append our header template if it exists
+        if( file_exists( $bitPath . 'header.tpl.php' ) == true ) {
+            $content .= file_get_contents( $bitPath . 'header.tpl.php' );
         }
+
+        // Fill in our function supplied template bits
+        foreach( $bits as $bitName ) {
+            if( file_exists( $bitPath . $bitName ) == true ) {
+                $content .= file_get_contents( $bitPath . $bitName );
+            }
+        }
+
+        // Append our footer template if it exists
+        if( file_exists( $bitPath . 'footer.tpl.php' ) == true ) {
+            $content .= file_get_contents( $bitPath . 'footer.tpl.php' );
+        }
+
         $this->page->setContent( $content );
     }
 
@@ -153,9 +162,9 @@ class Template {
      * @param string a prefix which is added to field name to create the tag name
      * @return void
      */
-    public function dataToTags( $data, $prefix ) {
+    public function dataToTags( $data ) {
         foreach( $data as $key => $content ) {
-            $this->page->addTag( $key.$prefix, $content);
+            $this->page->addTag( $key, $content);
         }
     }
 

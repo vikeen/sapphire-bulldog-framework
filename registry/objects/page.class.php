@@ -27,7 +27,13 @@ class Page {
     /**
      * Constructor...
      */
-    function __construct() { }
+    function __construct() {
+    }
+
+    public function setCoreTags() {
+        $this->Registry::getSetting('skin_dir');
+        return;
+    }
 
     public function getTitle() {
         return $this->title;
@@ -35,7 +41,7 @@ class Page {
 
     public function setPassword( $password ) {
         $this->password = $password;
-    } 
+    }
 
     public function setTitle( $title ) {
         $this->title = $title;
