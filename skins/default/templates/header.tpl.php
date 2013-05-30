@@ -2,6 +2,8 @@
 <html>
     <head>
         {css}
-        {js}
     </head>
-    <body>
+    <body class="no-js">
+        <div id="wrapper">
+            <div id="header">
+            </div>

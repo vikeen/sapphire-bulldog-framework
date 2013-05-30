@@ -27,6 +27,8 @@ class Registry {
     private function storeCoreSettings() {
         $dbh = self::$instance->getObject('db')->newConnection('localhost', 'root', 'qpwo1q2w3eEWQ', 'sb_framework');
 
+        // @TODO:this process is a little redundent with rearranging arrays to get the settings stored.
+        //       could use some improvement
         $sql = 'SELECT param_key,
                        param_value
                 FROM sb_config'
@@ -42,6 +44,7 @@ class Registry {
 
         // fill in our config gaps
         $settings['skin_dir'] = 'skins/' . $settings['skin'];
+        define( "SKIN_DIR", $settings['skin_dir'] );
 
         // store all our database here
         self::$instance->storeSetting( $settings );

@@ -4,7 +4,7 @@
  * Framework loader - acts as a single point of access to the Framework
  *
  * @version 0.1
- * @author Michael Peacock
+ * @author John Rake
  */
 
 // first and foremost, start our sessions
@@ -38,10 +38,10 @@ $template = $registry->getObject('template');
 $template->buildFromTemplates( array( 'main.tpl.php' ) );
 
 // cache a query of our members table
-$cache = $registry->getObject('db')->cacheQuery('SELECT * FROM sb_members');
+$cache = $registry->getObject('db')->cacheQuery('SELECT first_name, last_name, email FROM sb_member');
 
 // assign this to the members tag
-$template->getPage()->addTag('members', array('SQL', $cache) );
+$template->getPage()->addTag('member', array('SQL', $cache) );
 $template->getPage()->setTitle('Our members');
 
 // parse it all, and spit it out

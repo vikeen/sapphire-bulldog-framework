@@ -48,9 +48,6 @@ class Template {
      * @return void
      */
     private function replaceTags() {
-        // create core tags first
-        $this->page->setCoreTags();
-
         $tags = $this->page->getTags();
         foreach( $tags as $tag => $data ) {
             if( is_array( $data ) ) {
@@ -179,7 +176,10 @@ class Template {
      */
     public function parseOutput() {
         $this->replaceBits();
+
+        $this->page->setCoreTags();
         $this->replaceTags();
+
         $this->parseTitle();
     }
 }

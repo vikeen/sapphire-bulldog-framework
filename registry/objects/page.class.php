@@ -10,11 +10,9 @@ class Page {
     // room to grow later?
     private $css = array();
     private $js = array();
-    private $bodyTag = '';
-    private $bodyTagInsert = '';
 
     // future functionality?
-    private $authorised = true;
+    private $authorized = true;
     private $password = '';
 
     // page elements
@@ -28,10 +26,38 @@ class Page {
      * Constructor...
      */
     function __construct() {
+        // set default css files
+        array_push( $this->css, '<link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.1.0/pure-min.css">' // yui pure css
+        );
+
+        // set default js files
+        array_push( $this->js, '<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.0/jquery.min.js"></script>' // jquery js
+        );
     }
 
     public function setCoreTags() {
-        $this->Registry::getSetting('skin_dir');
+        $skinDir = Registry::getSetting('skin_dir');
+
+        // add our skin's css files
+        array_push( $this->css, '<link rel="stylesheet" href="' . $skinDir . '/css/style.css"/>' // base css
+        );
+
+        $cssTag = '';
+        foreach ( $this->css as $cssHTML ) {
+            $cssTag .= $cssHTML . "\n";
+        }
+        $this->addTag( 'css', $cssTag);
+
+        // add our skin's js files
+        array_push( $this->js, '<script src="' . $skinDir . '/js/script.js"></script>' // base js
+        );
+
+        $jsTag = '';
+        foreach ( $this->js as $jsHTML ) {
+            $jsTag .= $jsHTML . "\n";
+        }
+        $this->addTag( 'js', $jsTag );
+
         return;
     }
 
