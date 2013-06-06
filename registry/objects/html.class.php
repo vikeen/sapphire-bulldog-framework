@@ -118,8 +118,31 @@ class Html {
         }
         $html .= "</tr>\n";
 
+        $oddRowClass;
+        $evenRowClass;
+        if( isset($atr['row_class'] ) ) {
+            $oddRowClass  = isset($atr['row_class']['odd'])  ? $atr['row_class']['odd'] : null;
+            $evenRowClass = isset($atr['row_class']['even']) ? $atr['row_class']['even'] : null;
+        }
+
+        $count = 0;
         foreach( $data as $row ) {
-            $html .= "<tr>\n";
+            $count++;
+
+            $html .= '<tr';
+
+            // do we have a row based css class to add?
+            // @TODO: make this not based on even / odd. Should be able to say something like
+            // every 3rd or 6th row, maybe even a 'n' based fucntion like 2n+6
+            if( isset($oddRowClass) or isset($evenRowClass) ) {
+                if( $count % 2 ) {
+                    $html .= isset($oddRowClass) ? ' class="' . $oddRowClass . '"' : '';
+                } else {
+                    $html .= isset($evenRowClass) ? ' class="' . $evenRowClass . '"' : '';
+                }
+            }
+
+            $html .= ">\n";
             foreach( $headers as $header ) {
                 $html .= '<td>' . $row[$header] . '</td>';
             }

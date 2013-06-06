@@ -159,7 +159,8 @@ SQL;
         $table = array(
             'element' => 'table',
             'id' => 'user_table',
-            'class' => 'pure-table',
+            'class' => 'pure-table pure-table-horizontal',
+            'row_class' => array( 'odd' => 'pure-table-odd' ),
             'data' => $data,
         );
 
