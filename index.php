@@ -7,17 +7,7 @@
  * @author John Rake
  */
 
-// first and foremost, start our sessions
-session_start();
-
-// setup some definitions
-// The applications root path, so we can easily get this path from files located in other folders
-define( "APP_PATH", dirname( __FILE__ ) ."/" );
-// We will use this to ensure scripts are not called from outside of the framework
-define( "FW", true );
-
-# @TODO make a setting
-#date_default_timezone_set("Europe/London");
+include( 'config.php' );
 
 /**
  * Magic autoload function
@@ -31,23 +21,9 @@ function __autoload( $class_name ) {
 // require our registry
 require_once('registry/registry.class.php');
 $registry = Registry::singleton();
-$template = $registry->getObject('template');
 
-
-// populate our page object from a template file
-$template->buildFromTemplates( array( 'main.tpl.php' ) );
-
-// cache a query of our members table
-$cache = $registry->getObject('db')->cacheQuery('SELECT first_name, last_name, email FROM sb_member');
-
-// assign this to the members tag
-$template->getPage()->addTag('member', array('SQL', $cache) );
-$template->getPage()->setTitle('Our members');
-
-// parse it all, and spit it out
-$template->parseOutput();
-print $template->getPage()->getContent();
+// load our skin's index.php file
+require_once( $registry->getSetting('skin_dir') . '/index.php' );
 
 exit();
-
 ?>

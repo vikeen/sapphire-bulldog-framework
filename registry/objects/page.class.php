@@ -7,6 +7,8 @@
  */
 class Page {
 
+    private $registry;
+
     // room to grow later?
     private $css = array();
     private $js = array();
@@ -25,21 +27,23 @@ class Page {
     /**
      * Constructor...
      */
-    function __construct() {
-        // set default css files
-        array_push( $this->css, '<link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.1.0/pure-min.css">' // yui pure css
-        );
+    function __construct( $registryObj ) {
+        $this->registry = $registryObj;
 
-        // set default js files
-        array_push( $this->js, '<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.0/jquery.min.js"></script>' // jquery js
+        // set default css files
+        $this->addExternalFile( array(
+            'type' => 'css',
+            'url' => 'http://yui.yahooapis.com/pure/0.1.0/pure-min.css' )
         );
     }
 
     public function setCoreTags() {
-        $skinDir = Registry::getSetting('skin_dir');
+        $skinDir = $this->registry->getSetting('skin_dir');
 
         // add our skin's css files
-        array_push( $this->css, '<link rel="stylesheet" href="' . $skinDir . '/css/style.css"/>' // base css
+        $this->addExternalFile( array(
+            'type' => 'css',
+            'url' => $skinDir . '/css/style.css' )
         );
 
         $cssTag = '';
@@ -49,7 +53,9 @@ class Page {
         $this->addTag( 'css', $cssTag);
 
         // add our skin's js files
-        array_push( $this->js, '<script src="' . $skinDir . '/js/script.js"></script>' // base js
+        $this->addExternalFile( array(
+            'type' => 'js',
+            'url' => $skinDir . '/js/script.js' )
         );
 
         $jsTag = '';
@@ -63,6 +69,33 @@ class Page {
 
     public function getTitle() {
         return $this->title;
+    }
+
+    /*
+     * Add an external file to the page
+     * Example: JS / CSS
+     * @param Array: $params - an array of the parameters used for this file
+     *  - type
+     *  - url
+     * @return void
+     */
+    public function addExternalFile( $params ) {
+        if( isset($params['type']) ) {
+            $url = $params['url'];
+            if ( stripos($url, 'http://')  !== 0 && stripos($url, 'https://') !== 0 ) {
+               $url = $this->registry->getSetting('site_url') . $url;
+            }
+
+            $type = $params['type'];
+            if( $type === 'js' ) {
+                array_push( $this->js, '<script src="' . $url . '"></script>' );
+            }
+            else if( $type === 'css' ) {
+                array_push( $this->css, '<link rel="stylesheet" href="' . $url . '">' ); // yui pure css
+            } else {
+                // issue error here
+            }
+        }
     }
 
     public function setPassword( $password ) {
@@ -79,6 +112,14 @@ class Page {
 
     public function addTag( $key, $data ) {
         $this->tags[$key] = $data;
+    }
+
+    /*
+     * Add a little extra text by default here because we know it's a form error
+     */
+    public function addErrorTag( $key, $data ) {
+        $data = '<div class="sbf-form-errors">' . $data . '</div>';
+        $this->tags[$key . '_error'] = $data;
     }
 
     public function getTags() {

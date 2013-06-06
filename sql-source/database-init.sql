@@ -38,6 +38,8 @@ INSERT INTO sb_member VALUES
 ;
 
 INSERT INTO sb_config VALUES
-( 'skin', 'default' )
+( 'skin', 'default' ),
+( 'admin_skin', 'default' ),
+( 'site_url_host', 'framework.local' ),
+( 'site_url_protocol', 'http' )
 ;
-

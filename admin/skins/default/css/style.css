@@ -1,0 +1,30 @@
+#header {
+    margin-left: -250px;
+    width: 250px;
+    position: fixed;
+    top: 0;
+    left: 250px;
+    bottom: 0;
+    z-index: 1000;
+ }
+
+#content { margin: 45px 20px 45px 275px;  }
+
+/*
+    Pure CSS overrides
+*/
+.pure-menu-has-children .pure-menu-children {
+    background: #fff;
+    border: 1px solid #b7b7b7;
+}
+
+/*
+    Forms
+*/
+.notice { background-color: #61B842; color: white; }
+.sbf-form-errors { background: #ffe2e2; border: 2px solid #ce4242; font-size: 90%; color: #ce4242; margin-top: 5px; padding: 5px; text-align: center; }
+form { max-width: 500px; margin: 0 auto; }
+form button { float: right; margin-left: 20px !important; }
+
+#form-login { width: 350px; }
+#form-login button { margin-top: 20px; }

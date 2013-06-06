@@ -11,11 +11,14 @@ if ( !defined( 'FW' ) ) {
  */
 class Template {
 
+    private $registry;
     private $page;
+    private $templates = array();
 
-    public function __construct()  {
+    public function __construct( $registryObj )  {
+        $this->registry = $registryObj;
         include( APP_PATH . '/registry/objects/page.class.php');
-        $this->page = new Page();
+        $this->page = new Page( $registryObj );
     }
 
     /**
@@ -25,7 +28,7 @@ class Template {
      * @return void
      */
     public function addTemplateBit( $tag, $bit ) {
-        $bitFilePath = 'skins/' . Registry::getSetting('skin') . '/templates/' . $bit;
+        $bitFilePath = $this->registry->getSetting('skin_dir') . '/templates/' . $bit;
         $this->page->addTemplateBit( $tag, $bitFilePath );
     }
 
@@ -38,9 +41,19 @@ class Template {
         $bits = $this->page->getBits();
         foreach( $bits as $tag => $template ) {
             $templateContent = file_get_contents( $bit );
-            $newContent = str_replace( '{' . $tag . '}', $templateContent, $this->page->getContent() );
+            $newContent = str_replace( '[[sb.' . $tag . ']]', $templateContent, $this->page->getContent() );
             $this->page->setContent( $newContent );
         }
+    }
+
+    /*
+     * Clean up any used framework tags that are left in our code
+     * @return void
+     */
+    private function cleanOutput() {
+        $content = $this->page->getContent();
+        $content = preg_replace( '/\[\[sb\.(.*)\]\]/i', '', $content );
+        $this->page->setContent( $content );
     }
 
     /**
@@ -61,7 +74,7 @@ class Template {
                     $this->replaceDataTags( $tag, $data[1] );
                 }
             } else {
-                $newContent = str_replace( '{' . $tag . '}', $data, $this->page->getContent() );
+                $newContent = str_replace( '[[sb.' . $tag . ']]', $data, $this->page->getContent() );
                 $this->page->setContent( $newContent );
             }
         }
@@ -83,7 +96,7 @@ class Template {
 
             // create a new block of content with the results replaced into it
             foreach ($tags as $ntag => $data) {
-                $blockNew = str_replace("{" . $ntag . "}", $data, $blockNew); 
+                $blockNew = str_replace( '[[sb.' . $ntag . ']]', $data, $blockNew); 
             }
             $block .= $blockNew;
         }
@@ -106,7 +119,7 @@ class Template {
         while ($tags = Registry::getObject('db')->dataFromCache( $cacheId ) ) {
             foreach ($tags as $tag => $data) {
                 $blockNew = $blockOld;
-                $blockNew = str_replace("{" . $tag . "}", $data, $blockNew); 
+                $blockNew = str_replace( '[[sb.' . $tag . ']]', $data, $blockNew); 
             }
             $block .= $blockNew;
         }
@@ -125,29 +138,47 @@ class Template {
     }
 
     /**
+     * Return the parsed content of a file
+     * This is useful for parsing our template files as php code and then returning their content to then be parsed for tags / bits
+     * @param $String: $filePath - the path our file to include
+     * @return the php parsed content of our file
+     */
+    private function getIncludeContents( $filePath, $fileName ) {
+        if ( is_file( $filePath . $fileName ) ) {
+            ob_start();
+            $this->registry->logIt( 'TEMPLATE: building with template >' . $fileName . '<' );
+            include $filePath . $fileName;
+            return ob_get_clean();
+        } else {
+            $this->registry->logIt( 'TEMPLATE: failed to get contents from ' . $filePath . $fileName );
+            return '';
+        }
+    }
+
+    /**
      * Set the content of the page based on the templates provided
      * @param Array: $bits - Array of templates to combine together. These create the page's content
      * @return void
      */
-    public function buildFromTemplates( $bits ) {
-        $content = "";
-        $bitPath = 'skins/' . Registry::getSetting('skin') . '/templates/';
+    public function buildFromTemplates( $bits = null, $useHeader = true, $useFooter = true ) {
+        $content = '';
+        $bitPath = APP_PATH . $this->registry->getSetting('skin_dir') . '/templates/';
 
         // Append our header template if it exists
-        if( file_exists( $bitPath . 'header.tpl.php' ) == true ) {
-            $content .= file_get_contents( $bitPath . 'header.tpl.php' );
+        if( $useHeader === true ) {
+            $content .= $this->getIncludeContents( $bitPath, 'header.tpl.php' );
         }
 
-        // Fill in our function supplied template bits
-        foreach( $bits as $bitName ) {
-            if( file_exists( $bitPath . $bitName ) == true ) {
-                $content .= file_get_contents( $bitPath . $bitName );
+        // check for our function supplied template bits
+        if( isset($bits) ) {
+            foreach( $bits as $bitName ) {
+                $content .= $this->getIncludeContents( $bitPath, $bitName . '.tpl.php' );
             }
         }
 
         // Append our footer template if it exists
-        if( file_exists( $bitPath . 'footer.tpl.php' ) == true ) {
-            $content .= file_get_contents( $bitPath . 'footer.tpl.php' );
+        if( $useFooter === true ) {
+            $content .= $this->getIncludeContents( $bitPath, 'footer.tpl.php' );
         }
 
         $this->page->setContent( $content );
@@ -166,7 +197,7 @@ class Template {
     }
 
     public function parseTitle() {
-        $newContent = str_replace('<title>', '<title>'. $this->page->getTitle(), $this->page->getContent() );
+        $newContent = str_replace('<title>', '<title>' . $this->page->getTitle(), $this->page->getContent() );
         $this->page->setContent( $newContent );
     }
 
@@ -179,6 +210,7 @@ class Template {
 
         $this->page->setCoreTags();
         $this->replaceTags();
+        $this->cleanOutput();
 
         $this->parseTitle();
     }

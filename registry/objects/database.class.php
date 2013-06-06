@@ -4,39 +4,14 @@
  * Database management and access class
  * This is a very basic level of abstraction
  */
-class Database {
+class Database extends PDO {
 
-    /**
-     * Allows multiple database connections
-     * probably not used very often by many applications, but still useful
-     */
-    private $connections = array();
-
-    /**
-     * Tells the DB object which connection to use
-     * setActiveConnection($id) allows us to change this
-     */
-    private $activeConnection = 0;
-
-    /**
-     * Queries which have been executed and then "saved for later"
-     */
-    private $queryCache = array();
-
-    /**
-     * Data which has been prepared and then "saved for later"
-     */
-    private $dataCache = array();
-
-    /**
-     * Number of queries made during execution process
-     */
-    private $queryCounter = 0;
-
-    /**
-     * Record of the last query
-     */
-    private $last;
+    private $connections      = array(); # Allows multiple database connections
+    private $activeConnection = 0;       # Tells the DB object which connection to use. setActiveConnection($id) allows us to change this
+    private $queryCache       = array(); # Queries which have been executed and then "saved for later"
+    private $dataCache        = array(); # Data which has been prepared and then "saved for later"
+    private $queryCounter     = 0;       # Number of queries made during execution process
+    private $last;                       # Record of the last query
 
     public function __construct() {
     }
@@ -50,15 +25,17 @@ class Database {
      * @return int the id of the new connection
      */
     public function newConnection( $host, $user, $password, $database ) {
-        $this->connections[] = new mysqli( $host, $user, $password, $database );
-        $connectionId = count( $this->connections ) - 1;
-
-        if( mysqli_connect_errno() ) {
-            trigger_error( 'Error connecting to host. ' . $this->connections[$connectionId]->error, E_USER_ERROR );
+        try {
+            $this->connections[] = new PDO( "mysql:host=$host;dbname=$database", $user, $password );
+            $connectionId = count( $this->connections ) - 1;
+            $this->setActiveConnection( $connectionId );
+            $this->connections[$this->activeConnection]->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
+        }
+        catch(PDOException $e) {
+            Registry::logIt( 'DATABASE: failed to connect to database ' . $database . ' >' . $e->getMessage() . '<' );
         }
 
-        $this->setActiveConnection( $connectionId );
-        return $this;
+        return $this->connections[$this->activeConnection];
     }
 
     /**
@@ -66,7 +43,7 @@ class Database {
      * @return void
      */
     public function closeConnection() {
-        $this->connections[$this->activeConnection]->close();
+        $this->connections[$this->activeConnection] = null;
     }
 
     /**
@@ -78,8 +55,12 @@ class Database {
         if( is_int( $newConnectionId ) ) {
             $this->activeConnection = $newConnectionId;
         } else {
-            trigger_error( 'Invalid connection id >' . $newConnectionId . '<', E_USER_ERROR );
+            Registry::logIt( "DATABASE: Invalid connection id >$newConnectionId<" );
         }
+    }
+
+    public function getActiveConnection() {
+        return $this->connections[$this->activeConnection];
     }
 
     /**
@@ -88,12 +69,21 @@ class Database {
      * @return the pointed to the query in the cache
      */
     public function cacheQuery( $queryStr ) {
-        if( !$result = $this->connections[$this->activeConnection]->query( $queryStr ) ) {
-            trigger_error( 'Error executing and caching query: ' . $this->connections[$this->activeConnection]->error, E_USER_ERROR );
-            return -1;
-        } else {
+        try {
+            $sth = $this->connections[$this->activeConnection]->prepare( $queryStr );
+            $sth->setFetchMode(PDO::FETCH_ASSOC);
+            $sth->execute();
+
+            $result = array();
+            while( $row = $sth->fetch() ) {
+                array_push( $result, $row );
+            }
+
             $this->queryCache[] = $result;
-            return count($this->queryCache)-1;
+            return count($this->queryCache) - 1;
+        }
+        catch(PDOException $e) {
+            Registry::logIt( 'DATABASE: Error executing and caching query >' . $e->getMessage() . '<' );
         }
     }
 
@@ -154,7 +144,7 @@ class Database {
      * @param String the condition
      * @return bool
      */
-    public function updateRecords( $table, $changes, $condition ) {
+    public function updateRecords( $table, $changes, $condition = '' ) {
         $update = "UPDATE " . $table . " SET ";
         foreach( $changes as $field => $value ) {
             $update .= "`" . $field . "`='{$value}',";
@@ -247,7 +237,7 @@ class Database {
      */
     public function __deconstruct() {
         foreach( $this->connections as $connection ) {
-            $connection->close();
+            $connection->closeConnection;
         }
     }
 }

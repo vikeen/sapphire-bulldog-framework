@@ -1,3 +1,4 @@
 $(document).ready(function() {
-    $('body').toggleClass('no-js js');
+    $('body').removeClass('no-js');
+    $('body').addClass('js');
 });

@@ -1,12 +1,16 @@
 <?php
     class Bcrypt {
         private $rounds;
-        public function __construct($rounds = 12) {
+        public function __construct() {
             if(CRYPT_BLOWFISH != 1) {
                 throw new Exception("bcrypt not supported in this installation. See http://php.net/crypt");
             }
 
-            $this->rounds = $rounds;
+            $this->rounds = 12;
+        }
+
+        public function getRounds() {
+            return $this->rounds;
         }
 
         public function hash($input) {

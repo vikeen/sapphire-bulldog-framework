@@ -10,43 +10,55 @@ class Registry {
 
     private static $objects = array();
     private static $settings = array();
-    private static $frameworkName = ' Framework version 0.1';
+    private static $frameworkName = 'SB Framework version 0.1';
     private static $instance;
+    private static $logFile;
 
     private function __construct() {
     }
 
+    public function logIt( $message ) {
+        $message = '[' . date('Y-m-d H:i:s') . '] ' . $message . "\n";
+        fwrite( self::$instance->logFile, $message );
+    }
+
     private function storeCoreObjects() {
-        self::$instance->storeObject( array(
+        $coreObjects = array(
+            'bcrypt' => 'bcrypt',
             'db' => 'database',
-            'template' => 'template'
-            )
+            'html' => 'html',
+            'sanitizor' => 'sanitizor',
+            'template' => 'template',
+            'validator' => 'validator',
         );
+
+        self::$instance->logIt( 'REGISTRY: Storing ' . count( $coreObjects ) . ' framework objects' );
+
+        self::$instance->storeObject( $coreObjects );
     }
 
     private function storeCoreSettings() {
-        $dbh = self::$instance->getObject('db')->newConnection('localhost', 'root', 'qpwo1q2w3eEWQ', 'sb_framework');
+        $db = self::$instance->getObject('db');
+        $dbh = $db->newConnection('localhost', 'root', 'qpwo1q2w3eEWQ', 'sb_framework'); // create a database connection and return our PDO reference
+        $dbh->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
 
-        // @TODO:this process is a little redundent with rearranging arrays to get the settings stored.
-        //       could use some improvement
-        $sql = 'SELECT param_key,
-                       param_value
-                FROM sb_config'
-        ;
-
-        $dbh->executeQuery( $sql );
-        $rows = $dbh->getRows();
+        $sql = 'SELECT param_key, param_value FROM sb_config';
+        $sth = $dbh->prepare( $sql );
+        $sth->setFetchMode(PDO::FETCH_ASSOC);
+        $sth->execute();
 
         $settings = array();
-        foreach( $rows as $row ) {
+        while( $row = $sth->fetch() ) {
             $settings[ $row['param_key'] ] = $row['param_value'];
         }
 
         // fill in our config gaps
         $settings['skin_dir'] = 'skins/' . $settings['skin'];
-        define( "SKIN_DIR", $settings['skin_dir'] );
+        $settings['site_url'] = $settings['site_url_protocol'] . '://' . $settings['site_url_host'] . '/';
 
-        // store all our database here
+        self::$instance->logIt( 'REGISTRY: Storing ' . count( $settings ) . ' framework settings' );
+
+        // store all our settings
         self::$instance->storeSetting( $settings );
     }
 
@@ -60,6 +72,11 @@ class Registry {
             $obj = __CLASS__;
             self::$instance = new $obj;
         }
+
+        $logFilePath = APP_PATH . 'log/sb-framework-' . date( 'Ymd' ) . '.log';
+        self::$instance->logFile = fopen( $logFilePath, 'a' ) or die( "failed to open log file >" . $logFilePath . "<" );
+        fwrite( self::$instance->logFile, "\n\n" ); // create some room from the previous run in the logs
+        self::$instance->logIt( 'REGISTRY: ' . self::$instance->getFrameworkName() . ' instantiated' );
 
         self::$instance->storeCoreObjects();
         self::$instance->storeCoreSettings();
