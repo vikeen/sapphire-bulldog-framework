@@ -15,7 +15,7 @@ $template->getPage()->addExternalFile( array(
     'url' => 'http://yui.yahooapis.com/3.10.1/build/yui/yui-min.js' )
 );
 
-// sanitize all need values, discard the rest
+// sanitize all needed values, discard the rest
 $sanitizor->sanitize( $_GET, array( 'page' => 'nohtml', 'job' => 'nohtml' ) );
 
 // did the user request a specific page?

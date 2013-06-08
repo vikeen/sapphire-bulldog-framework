@@ -11,13 +11,14 @@ CREATE TABLE sb_r_member_status (
 
 CREATE TABLE sb_member (
     member_id int not null auto_increment,
+    username varchar(255) not null,
     first_name varchar(255) not null,
     middle_initial varchar(1) not null,
     last_name varchar(255) not null,
     email varchar(255) not null,
     password varchar(255) not null,
     member_status_id int not null,
-    PRIMARY KEY (member_id),
+    PRIMARY KEY (member_id, username, email),
     CONSTRAINT FOREIGN KEY (member_status_id) REFERENCES sb_r_member_status(member_status_id)
 ) ENGINE=InnoDB COMMENT='Members Directory';
 
@@ -33,10 +34,10 @@ INSERT INTO sb_r_member_status VALUES
 (2, 'Expired password. Forced reset upon login', 'Expired Password' )
 ;
 
-INSERT INTO sb_member VALUES
-(1, 'John', 'M', 'Rake', 'john.rake12@gmail.com', 'FAKE', 0)
+/*INSERT INTO sb_member VALUES
+(1, 'jmrake', 'John', 'M', 'Rake', 'john.rake12@gmail.com', 'FAKE', 0)
 ;
-
+*/
 INSERT INTO sb_config VALUES
 ( 'skin', 'default' ),
 ( 'admin_skin', 'default' ),

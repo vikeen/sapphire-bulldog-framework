@@ -32,8 +32,13 @@ class Validator {
             }
         }
 
-        Registry::logIt( 'VALIDATOR: ' . count($fieldErrorMessages) . ' fields failed validation' );
-        return $fieldErrorMessages;
+        $count = count($fieldErrorMessages);
+        Registry::logIt( 'VALIDATOR: ' . $count . ' fields failed validation' );
+
+        if( $count > 0 ) {
+            return $fieldErrorMessages;
+        }
+        return false;
     }
 
     /*

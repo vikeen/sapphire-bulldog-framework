@@ -25,11 +25,14 @@ Registry::singleton();
 // change our skin directory to the admin verison
 Registry::storeSetting( array( 'skin_dir' => 'admin/skins/' . Registry::getSetting('admin_skin') ) );
 
-#if( $_SESSION['logged_in'] === true ) {
-    require_once( 'dashboard.php' );
-#} else {
-#    require_once( 'login.php' );
-#}
+$_SESSION['logged_in'] = true;
+if( isset($_SESSION['logged_in']) ) {
+    if( $_SESSION['logged_in'] === true ) {
+        require_once( 'dashboard.php' );
+    }
+} else {
+    require_once( 'login.php' );
+}
 
 exit();
 ?>

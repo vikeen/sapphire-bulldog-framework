@@ -49,6 +49,20 @@
                 'validations' => array( 'required' )
             )
         ),
+        'username' => array(
+            'element' => 'input',
+            'label' => 'Username',
+            'id' => 'username',
+            'name' => 'username',
+            'type' => 'text',
+            'placeholder' => 'jddoe',
+            'value' => $sanitizor->sanitizePOST( 'username', 'str' ),
+            'validate' => array(
+                'name' => 'Username',
+                'value' => $sanitizor->sanitizePOST( 'username', 'str' ),
+                'validations' => array( 'required' )
+            )
+        ),
         'email' => array(
             'element' => 'input',
             'label' => 'Email',
@@ -81,35 +95,33 @@
                 'value' => $sanitizor->sanitizePOST( 'password', 'str' ),
                 'validations' => array( 'required' )
             )
+        )
+    );
+
+    $formControls = array(
+        'submit_button' => array(
+            'element' => 'button',
+            'type' => 'submit',
+            'class' => 'pure-button pure-input-1-3 notice',
+            'text' => 'Add User'
         ),
         'reset_button' => array(
             'element' => 'button',
             'type' => 'reset',
             'class' => 'pure-button pure-input-1-3 notice',
             'text' => 'Reset'
-        ),
-        'submit_button' => array(
-            'element' => 'button',
-            'type' => 'submit',
-            'class' => 'pure-button pure-input-1-3 notice',
-            'text' => 'Add User'
         )
     );
 
-    $validationError = false;
     if( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
-        $validator = Registry::getObject('validator');
-        $errors = $validator->validate( $formFields );
-        if( count($errors) > 0 ) {
+        if( $errors = Registry::getObject('validator')->validate( $formFields) ) {
             $page = Registry::getObject('template')->getPage();
             foreach( $errors as $key => $errorData ) {
                 $page->addErrorTag( $key, implode( "</br>", $errorData ) );
             }
-            $validationError = true;
-        }
 
-        if( ! $validationError ) {
             $sqlBinds = array (
+                'username'         => $formFields['username']['value'],
                 'first_name'       => $formFields['first_name']['value'],
                 'middle_initial'   => $formFields['middle_initial']['value'],
                 'last_name'        => $formFields['last_name']['value'],
@@ -119,8 +131,8 @@
             );
 
             $sql = <<<SQL
-INSERT INTO sb_member ( first_name, middle_initial, last_name, email, password, member_status_id )
-VALUES ( :first_name, :middle_initial, :last_name, :email, :password, :member_status_id )
+INSERT INTO sb_member ( username, first_name, middle_initial, last_name, email, password, member_status_id )
+VALUES ( :username, :first_name, :middle_initial, :last_name, :email, :password, :member_status_id )
 SQL;
             $sth = $dbh->prepare( $sql );
             $sth->execute( $sqlBinds );
@@ -129,8 +141,8 @@ SQL;
             Registry::storeSetting( array( 'page_job' => '' ) );
             header( 'Location: /admin/?page=user' ) ;
         }
-    }
-    if( strtolower(Registry::getSetting('page_job')  === 'insert' ) ) {
+    } else {
+        if( strtolower(Registry::getSetting('page_job')  === 'insert' ) ) {
 ?>
         <form id="form-user-add" class="pure-form pure-form-aligned" action="/admin/?page=user&job=insert" method="POST">
             <?php foreach( $formFields as $field ) { ?>
@@ -138,11 +150,17 @@ SQL;
                 <?php echo $html->generateElement( $field ) ?>
             </div>
             <?php } ?>
+            <div class="pure-controls">
+            <?php foreach( $formControls as $control ) {
+                echo $html->generateElement( $control );
+            } ?>
+            </div>
         </form>
 <?php
-    } else {
-        $sql = <<<SQL
-SELECT m.first_name as 'First Name',
+        } else {
+            $sql = <<<SQL
+SELECT m.username as 'Username',
+       m.first_name as 'First Name',
        m.last_name as 'Last Name',
        m.middle_initial as 'Middle Initial',
        m.email as 'Email',
@@ -153,17 +171,18 @@ FROM sb_member m,
 WHERE ( m.member_status_id = ms.member_status_id )
 SQL;
 
-        $sth = $dbh->prepare( $sql );
-        $sth->execute();
-        $data = $sth->fetchAll(PDO::FETCH_ASSOC);
-        $table = array(
-            'element' => 'table',
-            'id' => 'user_table',
-            'class' => 'pure-table pure-table-horizontal',
-            'row_class' => array( 'odd' => 'pure-table-odd' ),
-            'data' => $data,
-        );
-
-        echo $html->generateElement( $table );
+            $sth = $dbh->prepare( $sql );
+            $sth->execute();
+            $data = $sth->fetchAll(PDO::FETCH_ASSOC);
+Registry::logIt( var_dump($data));
+            $table = array(
+                'element' => 'table',
+                'id' => 'user_table',
+                'class' => 'pure-table pure-table-horizontal',
+                'row_class' => array( 'odd' => 'pure-table-odd' ),
+                'data' => $data,
+            );
+            echo $html->generateElement( $table );
+        }
     }
 ?>
